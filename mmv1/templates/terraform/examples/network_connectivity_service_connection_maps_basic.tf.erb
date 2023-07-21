@@ -5,7 +5,7 @@ resource "google_compute_network" "consumer_net" {
 
 resource "google_compute_subnetwork" "consumer_subnet" {
   name          = "<%= ctx[:vars]['consumer_subnetwork_name'] %>"
-  purpose       = "PRIVATE_SERVICE_CONNECT"
+  purpose       = "PRIVATE"
   ip_cidr_range = "10.0.0.0/16"
   region        = "us-central1"
   network       = google_compute_network.consumer_net.id
@@ -18,26 +18,17 @@ resource "google_compute_network" "producer_net" {
 
 resource "google_compute_subnetwork" "producer_subnet_psc" {
   name          = "<%= ctx[:vars]['producer_subnetwork_name'] %>"
-  ip_cidr_range = "10.1.0.0/16"
   region        = "us-central1"
+  purpose       = "PRIVATE_SERVICE_CONNECT"
   network       = google_compute_network.producer_net.id
+  ip_cidr_range = "10.1.0.0/16"
 }
 
 resource "google_compute_subnetwork" "producer_subnet" {
   name          = "<%= ctx[:vars]['producer_subnetwork_name'] %>"
-  ip_cidr_range = "10.0.0.0/16"
-  purpose       = "PRIVATE"
   region        = "us-central1"
   network       = google_compute_network.producer_net.id
-}
-
-resource "google_network_connectivity_service_class" "default"{
-  name        = "<%= ctx[:vars]['service_class_name'] %>"
-  location    = "us-central1"
-  description = "my-basic serviceClass"
-  labels      = {
-      foo = "bar"
-    }
+  ip_cidr_range = "10.0.0.0/16"
 }
 
 resource "google_compute_service_attachment" "default" {
@@ -74,7 +65,7 @@ resource "google_network_connectivity_service_connection_policy" "default" {
   name = "<%= ctx[:vars]['connection_policy_name'] %>"
   location = "us-central1"
 
-  service_class = google_network_connectivity_service_class.default.service_class
+  service_class = "gcp-memorystore-redis"
   network       = google_compute_network.consumer_net.id
   psc_config {
     subnetworks = [google_compute_subnetwork.subnetwork_consumer.id]
@@ -84,7 +75,7 @@ resource "google_network_connectivity_service_connection_policy" "default" {
 
 resource "google_network_connectivity_service_connection_map" "default" {
     name = "<%= ctx[:vars]['resource_name'] %>"
-    service_class = google_network_connectivity_service_class.default.service_class
+    service_class = "gcp-memorystore-redis"
     producer_psc_configs {
         service_attachment_uri = google_compute_service_attachment.default.id
     }
